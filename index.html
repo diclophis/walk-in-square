@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>walk in square</title>
+    <style>
+      #compass {
+        position: absolute;
+        left: 25%;
+        width: 50%;
+        transform-origin: 50% 50%;
+        -webkit-transform-origin: 50% 50%;
+        -moz-transform-origin: 50% 50%;
+      }
+
+      #arrow {
+        position: absolute;
+        left: 25%;
+        width: 50%;
+        transform-origin: 50% 50%;
+        -webkit-transform-origin: 50% 50%;
+        -moz-transform-origin: 50% 50%;
+      }
+    </style>
+    <script>
+      function init_nav() {
+        var startPos;
+
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            startPos = position;
+            document.getElementById("startLat").innerHTML = startPos.coords.latitude;
+            document.getElementById("startLon").innerHTML = startPos.coords.longitude;
+          }, function(error) {
+            alert("Error occurred. Error code: " + error.code);
+            // error.code can be:
+            //   0: unknown error
+            //   1: permission denied
+            //   2: position unavailable (error response from locaton provider)
+            //   3: timed out
+          });
+
+          navigator.geolocation.watchPosition(function(position) {
+            document.getElementById("currentLat").innerHTML = position.coords.latitude;
+            document.getElementById("currentLon").innerHTML = position.coords.longitude;
+            document.getElementById("distance").innerHTML =
+              calculateDistance(startPos.coords.latitude, startPos.coords.longitude,
+                                position.coords.latitude, position.coords.longitude);
+          });
+        }
+      };
+
+      // Reused code - copyright Moveable Type Scripts - retrieved May 4, 2010.
+      // http://www.movable-type.co.uk/scripts/latlong.html
+      // Under Creative Commons License http://creativecommons.org/licenses/by/3.0/
+      function calculateDistance(lat1, lon1, lat2, lon2) {
+        var R = 6371; // km
+        var dLat = (lat2-lat1).toRad();
+        var dLon = (lon2-lon1).toRad();
+        var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        var d = R * c;
+        return (d * 1000.0);
+      }
+      Number.prototype.toRad = function() {
+        return this * 
+        Math.PI / 180;
+      }
+
+      function init_compass() {
+        var compass = document.getElementById('compass');        
+        if(window.DeviceOrientationEvent) {
+          window.addEventListener('deviceorientation', function(event) {
+            var alpha;
+            //Check for iOS property
+            if(event.webkitCompassHeading) {
+              alpha = event.webkitCompassHeading;
+              //Rotation is reversed for iOS
+              compass.style.WebkitTransform = 'rotate(-' + alpha + 'deg)';
+            }
+            //non iOS
+            else {
+              alpha = event.alpha;
+              webkitAlpha = alpha;
+              if(!window.chrome) {
+                //Assume Android stock (this is crude, but good enough for our example) and apply offset
+                webkitAlpha = alpha-270;
+              }
+            }
+
+            document.getElementById('compassValue').innerHTML = alpha;
+
+            compass.style.Transform = 'rotate(' + alpha + 'deg)';
+            compass.style.WebkitTransform = 'rotate('+ webkitAlpha + 'deg)';
+            //Rotation is reversed for FF
+            compass.style.MozTransform = 'rotate(-' + alpha + 'deg)'; 
+          }, false);
+        }
+      }
+    </script>
+  </head>
+  <body onload="init_compass(); init_nav()">
+    <div id="tripmeter">
+      <p>
+        Starting Location (lat, lon):<br/>
+        <span id="startLat"></span> , <span id="startLon"></span>
+      </p>
+      <p>
+        Current Location (lat, lon):<br/>
+        <span id="currentLat"></span> , <span id="currentLon"></span>
+      </p>
+      <p>
+        Distance from starting location:<br/>
+        <span id="distance">0</span> m
+      </p>
+    </div>
+
+    <div id="compassValue">
+    </div>
+
+    <div id="compassContainer">
+      <img src="compass.png" id="compass" alt="^"/>
+      <img src="arrow.png" id="arrow" alt="|"/>
+    </div>
+  </body>
+</html>

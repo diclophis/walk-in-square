@@ -21,86 +21,8 @@
         -moz-transform-origin: 50% 50%;
       }
     </style>
-    <script>
-      function init_nav() {
-        var startPos;
-
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(function(position) {
-            startPos = position;
-            document.getElementById("startLat").innerHTML = startPos.coords.latitude;
-            document.getElementById("startLon").innerHTML = startPos.coords.longitude;
-          }, function(error) {
-            alert("Error occurred. Error code: " + error.code);
-            // error.code can be:
-            //   0: unknown error
-            //   1: permission denied
-            //   2: position unavailable (error response from locaton provider)
-            //   3: timed out
-          });
-
-          navigator.geolocation.watchPosition(function(position) {
-            document.getElementById("currentLat").innerHTML = position.coords.latitude;
-            document.getElementById("currentLon").innerHTML = position.coords.longitude;
-            document.getElementById("distance").innerHTML =
-              calculateDistance(startPos.coords.latitude, startPos.coords.longitude,
-                                position.coords.latitude, position.coords.longitude);
-          });
-        }
-      };
-
-      // Reused code - copyright Moveable Type Scripts - retrieved May 4, 2010.
-      // http://www.movable-type.co.uk/scripts/latlong.html
-      // Under Creative Commons License http://creativecommons.org/licenses/by/3.0/
-      function calculateDistance(lat1, lon1, lat2, lon2) {
-        var R = 6371; // km
-        var dLat = (lat2-lat1).toRad();
-        var dLon = (lon2-lon1).toRad();
-        var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        var d = R * c;
-        return (d * 1000.0);
-      }
-      Number.prototype.toRad = function() {
-        return this * 
-        Math.PI / 180;
-      }
-
-      function init_compass() {
-        var compass = document.getElementById('compass');        
-        if(window.DeviceOrientationEvent) {
-          window.addEventListener('deviceorientation', function(event) {
-            var alpha;
-            //Check for iOS property
-            if(event.webkitCompassHeading) {
-              alpha = event.webkitCompassHeading;
-              //Rotation is reversed for iOS
-              compass.style.WebkitTransform = 'rotate(-' + alpha + 'deg)';
-            }
-            //non iOS
-            else {
-              alpha = event.alpha;
-              webkitAlpha = alpha;
-              if(!window.chrome) {
-                //Assume Android stock (this is crude, but good enough for our example) and apply offset
-                webkitAlpha = alpha-270;
-              }
-            }
-
-            document.getElementById('compassValue').innerHTML = alpha;
-
-            compass.style.Transform = 'rotate(' + alpha + 'deg)';
-            compass.style.WebkitTransform = 'rotate('+ webkitAlpha + 'deg)';
-            //Rotation is reversed for FF
-            compass.style.MozTransform = 'rotate(-' + alpha + 'deg)'; 
-          }, false);
-        }
-      }
-    </script>
   </head>
-  <body onload="init_compass(); init_nav()">
+  <body>
     <div id="tripmeter">
       <p>
         Starting Location (lat, lon):<br/>
@@ -123,5 +45,100 @@
       <img src="compass.png" id="compass" alt="^"/>
       <img src="arrow.png" id="arrow" alt="|"/>
     </div>
+    <script>
+
+      
+      Number.prototype.toRad = function() {
+        return this * 
+        Math.PI / 180;
+      }
+
+      // Reused code - copyright Moveable Type Scripts - retrieved May 4, 2010.
+      // http://www.movable-type.co.uk/scripts/latlong.html
+      // Under Creative Commons License http://creativecommons.org/licenses/by/3.0/
+      function calculateDistance(lat1, lon1, lat2, lon2) {
+        var R = 6371; // km
+        var dLat = (lat2-lat1).toRad();
+        var dLon = (lon2-lon1).toRad();
+        var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        var d = R * c;
+        return (d * 1000.0);
+      }
+
+      var startPos;
+      var compass = document.getElementById('compass');
+      var arrow = document.getElementById('arrow');
+      var direction = 0;
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+          startPos = position;
+          document.getElementById("startLat").innerHTML = startPos.coords.latitude;
+          document.getElementById("startLon").innerHTML = startPos.coords.longitude;
+          alert('this is your starting position, face north and proceed 0.5 m');
+        }, function(error) {
+          alert("Error occurred. Error code: " + error.code);
+          // error.code can be:
+          //   0: unknown error
+          //   1: permission denied
+          //   2: position unavailable (error response from locaton provider)
+          //   3: timed out
+        });
+
+        var geoOptions = {
+          enableHighAccuracy: true, 
+          maximumAge: 3000,
+          timeout: 2700
+        };
+
+        navigator.geolocation.watchPosition(function(position) {
+          var currentDistance = calculateDistance(startPos.coords.latitude, startPos.coords.longitude,
+                                                  position.coords.latitude, position.coords.longitude);
+
+  
+          document.getElementById("currentLat").innerHTML = position.coords.latitude;
+          document.getElementById("currentLon").innerHTML = position.coords.longitude;
+          document.getElementById("distance").innerHTML = currentDistance;
+
+          if (currentDistance >= 0.45 && currentDistance <= 0.55) {
+            startPos = position;
+            if (direction == 0) {
+              alert('now face east');
+            } else if (direction == 1) {
+              alert('now face south');
+            } else if (direction == 2) {
+              alert('now face west');
+            } else if (direction == 3) {
+              alert('now face north, you should have drawn a square');
+            }
+
+            direction = (direction + 1) % 4;
+          }
+        }, function(err) { alert(err); }, geoOptions);
+      }
+
+      var getAlpha = function(event) {
+        var alpha = null;
+        if(event.webkitCompassHeading) {
+          alpha = event.webkitCompassHeading;
+        } else {
+          alpha = event.alpha;
+        }
+
+        return (alpha);
+      };
+
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientation', function(event) {
+          var alpha = getAlpha(event);
+          targetAlpha = alpha + (direction * 90.0); 
+          compass.style.transform = 'rotate(' + alpha + 'deg)';
+          arrow.style.transform = 'rotate(' + targetAlpha + 'deg)';
+        }, false);
+      }
+    </script>
   </body>
 </html>

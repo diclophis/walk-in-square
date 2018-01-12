@@ -78,9 +78,9 @@
           startPos = position;
           document.getElementById("startLat").innerHTML = startPos.coords.latitude;
           document.getElementById("startLon").innerHTML = startPos.coords.longitude;
-          alert('this is your starting position, face north and proceed 0.5 m');
+          alert('this is your starting position, face north and proceed forward ~2.0 m');
         }, function(error) {
-          alert("Error occurred. Error code: " + error.code);
+          alert("Error occurred. Error code: " + error.code + " " + error.message);
           // error.code can be:
           //   0: unknown error
           //   1: permission denied
@@ -90,8 +90,8 @@
 
         var geoOptions = {
           enableHighAccuracy: true, 
-          maximumAge: 3000,
-          timeout: 2700
+          maximumAge: 30000,
+          timeout: 27000
         };
 
         navigator.geolocation.watchPosition(function(position) {
@@ -103,7 +103,7 @@
           document.getElementById("currentLon").innerHTML = position.coords.longitude;
           document.getElementById("distance").innerHTML = currentDistance;
 
-          if (currentDistance >= 0.45 && currentDistance <= 0.55) {
+          if (currentDistance >= 1.90 && currentDistance <= 2.10) {
             startPos = position;
             if (direction == 0) {
               alert('now face east');
@@ -117,7 +117,7 @@
 
             direction = (direction + 1) % 4;
           }
-        }, function(err) { alert(err); }, geoOptions);
+        }, function(err) { alert("broken? " + err.code + " ? " + err.message); }, geoOptions);
       }
 
       var getAlpha = function(event) {
